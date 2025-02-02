@@ -1,0 +1,11 @@
+Project Name
+Short desc.
+Existing solution
+tech stack
+time frame
+
+
+App -> server {
+    topics / custom prompt
+    time frame
+}
