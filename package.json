@@ -15,16 +15,19 @@
     "@types/node": "^22.13.0",
     "axios": "^1.7.9",
     "body-parser": "^1.20.3",
+    "compression": "^1.7.5",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
     "mongodb": "^6.13.0",
     "mongoose": "^8.9.6",
+    "node-cache": "^5.1.2",
     "openai": "^4.82.0",
     "ts-node": "^10.9.2",
     "undici": "^7.3.0"
   },
   "devDependencies": {
+    "@types/compression": "^1.7.5",
     "@types/cors": "^2.8.17",
     "typescript": "^5.7.3"
   }
