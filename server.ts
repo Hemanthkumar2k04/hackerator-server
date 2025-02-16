@@ -44,7 +44,7 @@ app.post("/register", async (req: Request, res: Response): Promise<void> => {
     const newUser = new User({ username, password, credits: 300 });
     await newUser.save();
 
-    res.status(201).json({ message: "Registration Successful", credits: newUser.credits });
+    res.status(201).json({ message: "Registration Successful"});
   } catch (error) {
     console.error("Error during registration:", error);
     res.status(500).json({ message: "Server error while registering" });
@@ -72,13 +72,47 @@ app.post("/login", async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    res.status(200).json({ message: "Login Successful", credits: user.credits });
+    res.status(200).json({ message: "Login Successful"});
   } catch (error) {
     console.error("Error during login:", error);
     res.status(500).json({ message: "Internal server error" });
   }
 });
 
+app.get('/get-credits/:username', async (req, res) => {
+  try{
+    const username = req.params.username;
+    const user = await User.findOne({username});
+
+    if(!user){
+      res.status(404).json({message: 'User not found'});
+    }
+
+    res.status(200).json({credits: user?.credits})
+  }
+  catch (err){
+    console.log(err);
+    res.status(500).json({message: 'Server Error'});
+  }
+})
+app.patch('/updateCredits', async (req, res) =>{
+  const {username, credits} = req.body;
+  try{
+    const user = await User.findOne({username});
+    if(!user){
+      res.status(404).json({message: "User not Found"});
+    }
+    if(user){
+      user.credits = credits;
+      await user.save();
+      res.status(200).json({message: "Updated Successfully"});
+    }
+  }
+  catch (err){
+    console.log(err);
+    res.status(500).json({message: "Internal Server Error"});
+  }
+})
 // Generate idea and deduct credits
 app.post("/generate", async (req: Request, res: Response): Promise<void> => {
   try {
@@ -95,19 +129,15 @@ app.post("/generate", async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    if (user.credits <= 0) {
-      res.status(403).json({ message: "Insufficient credits. Please top up." });
-      return;
-    }
 
     const finalPrompt = is_custom_prompt
       ? prompt
-      : `${template}${prompt} and I would like the details of Project name, Short Description, what it actually solves, existing solutions, TECH STACK and whether it can be done in a 24 or 48 hr hackathon and your important suggestion on this project.`;
+      : `${template}${prompt} and I would like the details of Project name, Short Description, what it actually solves, existing solutions, TECH STACK and whether it can be done in a 24 or 48 hr hackathon and your important suggestion on this project with Releveant Research Papers which are recent. Never give any snippet of code.`;
 
     const response = await undici.fetch('http://localhost:11434/api/generate', {
       method: 'POST',
       body: JSON.stringify({
-        model: "llama3.2:3b",
+        model: "llama3.2",
         prompt: finalPrompt,
         max_tokens: 25,
         num_ctx: 64
@@ -118,11 +148,8 @@ app.post("/generate", async (req: Request, res: Response): Promise<void> => {
     const responseText = await response.text();
     const parsedResponse = parseModelResponse(responseText);
 
-    // Deduct 10 credits per generation request
-    user.credits -= 10;
-    await user.save();
 
-    res.json({ result: parsedResponse, remaining_credits: user.credits });
+    res.json({ result: parsedResponse});
 
   } catch (error) {
     console.error('Error:', error);
@@ -149,28 +176,6 @@ const parseModelResponse = (data: string): string => {
 };
 
 // Check remaining credits for a user
-app.post("/checkCredits", async (req: Request, res: Response): Promise<void> => {
-  const { username } = req.body;
-
-  if (!username) {
-    res.status(400).json({ message: "Username required" });
-    return;
-  }
-
-  try {
-    const user = await User.findOne({ username });
-    if (!user) {
-      res.status(404).json({ message: "User not found" });
-      return;
-    }
-
-    res.status(200).json({ credits: user.credits });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Internal server error" });
-  }
-});
-
 app.listen(port, () => {
   console.log(`Server running at http://localhost:${port}`);
 });
